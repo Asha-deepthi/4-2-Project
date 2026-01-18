@@ -98,48 +98,60 @@ with right_col:
 # ---------------- MOCK RESPONSE (replace with backend later) ----------------
 if uploaded_image and analyze:
 
-    with st.spinner("Analyzing meal using AI models..."):
-        response = {
-            "foods": [
-                {"name": "White Rice", "confidence": 0.92},
-                {"name": "Dal", "confidence": 0.88}
-            ],
-            "gl": 38,
-            "predicted_glucose": 185,
-            "recommendation": "🚶 Walk for 15 minutes to reduce glucose spike"
+    with st.spinner("Analyzing meal using backend AI service..."):
+
+        # --------------------------------
+        # Send image to backend API
+        # --------------------------------
+        backend_url = "http://127.0.0.1:8000/analyze-meal"
+
+        files = {
+            "file": (
+                uploaded_image.name,
+                uploaded_image.getvalue(),
+                uploaded_image.type
+            )
         }
 
-    # ---------------- RESULTS SECTION ----------------
+        try:
+            response = requests.post(backend_url, files=files)
+            response.raise_for_status()
+            result = response.json()
+
+        except requests.exceptions.RequestException as e:
+            st.error("❌ Backend connection failed")
+            st.stop()
+
+    # -----------------------------
+    # DETECTED FOODS
+    # -----------------------------
     st.markdown("## 📋 Analysis Results")
 
-    # -------- Detected Foods --------
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.subheader("🍛 Detected Food Items")
-    for food in response["foods"]:
+    st.markdown("### 🍛 Detected Food Items")
+    for food in result["foods"]:
         st.write(
             f"✔ **{food['name']}** "
-            f"({int(food['confidence']*100)}% confidence)"
+            f"({int(food['confidence'] * 100)}% confidence)"
         )
-    st.markdown('</div>', unsafe_allow_html=True)
 
-    # -------- Metrics --------
+    # -----------------------------
+    # GL METRIC
+    # -----------------------------
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown('<div class="metric-box">', unsafe_allow_html=True)
-        st.metric("Glycemic Load (GL)", response["gl"])
-        st.write("Impact of meal on blood sugar")
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.metric("Glycemic Load (GL)", result["glycemic_load"])
 
     with col2:
-        st.markdown('<div class="metric-box">', unsafe_allow_html=True)
-        st.metric("Predicted Peak Glucose", f"{response['predicted_glucose']} mg/dL")
-        st.write("Expected post-meal glucose peak")
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.metric(
+            "Predicted Peak Glucose",
+            f"{result['predicted_glucose']} mg/dL"
+        )
 
-    # -------- Glucose Graph --------
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.subheader("📈 Predicted Blood Glucose Trend")
+    # -----------------------------
+    # GLUCOSE GRAPH
+    # -----------------------------
+    st.markdown("### 📈 Predicted Blood Glucose Trend")
 
     time = np.arange(0, 180, 15)
     glucose = 100 + np.sin(time / 60) * 40 + 45
@@ -152,13 +164,13 @@ if uploaded_image and analyze:
     ax.legend()
 
     st.pyplot(fig)
-    st.markdown('</div>', unsafe_allow_html=True)
 
-    # -------- Recommendation --------
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.subheader("💡 Personalized Recommendation")
-    st.success(response["recommendation"])
-    st.markdown('</div>', unsafe_allow_html=True)
+    # -----------------------------
+    # RECOMMENDATION
+    # -----------------------------
+    st.markdown("### 💡 Personalized Recommendation")
+    st.success(result["recommendation"])
+
 
 # ---------------- FOOTER ----------------
 st.markdown(
