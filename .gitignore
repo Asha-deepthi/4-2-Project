@@ -1,0 +1,20 @@
+# Virtual Environment
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+
+# Model files (optional)
+*.pt
+*.h5
+
+# Temp files
+temp/
