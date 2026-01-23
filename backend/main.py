@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from gl_calculation import calculate_glycemic_load
 
 # ---------------------------------------
 # Create FastAPI app
@@ -41,13 +42,23 @@ async def analyze_meal(file: UploadFile = File(...)):
     # NOTE: We are NOT processing the image yet
     # This is just a skeleton response
 
+    detected_foods = [
+        {"name": "white_rice", "confidence": 0.92},
+        {"name": "dal", "confidence": 0.88}
+    ]
+
+    portion_grams = 200  # assumed portion
+
+    total_gl = 0
+    for food in detected_foods:
+        gl = calculate_glycemic_load(food["name"], portion_grams)
+        if gl:
+            total_gl += gl
+
     response = {
-        "foods": [
-            {"name": "White Rice", "confidence": 0.92},
-            {"name": "Dal", "confidence": 0.88}
-        ],
-        "glycemic_load": 38,
-        "predicted_glucose": 185,
+        "foods": detected_foods,
+        "glycemic_load": round(total_gl, 2),
+        "predicted_glucose": 185,  # dummy for now
         "recommendation": "Walk for 15 minutes to reduce glucose spike"
     }
 
