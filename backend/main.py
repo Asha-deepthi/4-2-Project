@@ -26,9 +26,12 @@ app.add_middleware(
 # --------------------------------------------------
 FOOD_NAME_MAPPING = {
     "rice": "white_rice",
-    "bowl": "white_rice",
-    "plate": "white_rice"
+    "idli": "idli",
+    "dosa": "dosa",
+    "sambar": "sambar",
+    "dal": "dal"
 }
+
 
 # --------------------------------------------------
 # Root Endpoint
@@ -48,7 +51,7 @@ async def analyze_meal(file: UploadFile = File(...)):
     → GL calculation → glucose prediction → recommendation
     """
 
-    # ----------------------------------------------
+    # ---------------------------------------------- 
     # 1. Read image bytes
     # ----------------------------------------------
     image_bytes = await file.read()
@@ -60,7 +63,13 @@ async def analyze_meal(file: UploadFile = File(...)):
 
     # Safety fallback (if YOLO fails)
     if not detected_foods:
-        detected_foods = [{"name": "rice", "confidence": 0.6}]
+     return {
+        "foods": [],
+        "glycemic_load": 0,
+        "predicted_glucose": None,
+        "recommendation": "No food detected. Please upload a clearer image."
+    }
+
 
     # ----------------------------------------------
     # 3. Normalize food names

@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 16
+names: ['cauliflower', 'chapathi', 'chicken biryani', 'coconut chutney', 'dal', 'dosa', 'idli', 'mutton biryani', 'panneer', 'peanut chutney', 'potato', 'puri', 'rice', 'sambar', 'tomato chutney', 'veg biryani']
+
+roboflow:
+  workspace: food-detection-qjlup
+  project: glucovision-food-detection
+  version: 2
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/food-detection-qjlup/glucovision-food-detection/dataset/2

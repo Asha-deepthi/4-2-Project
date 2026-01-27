@@ -81,7 +81,7 @@ with left_col:
     )
     if uploaded_image:
         image = Image.open(uploaded_image)
-        st.image(image, use_column_width=True)
+        st.image(image, width = 150)
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------- RIGHT: ANALYSIS BUTTON ----------------
