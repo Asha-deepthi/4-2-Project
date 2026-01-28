@@ -30,12 +30,6 @@ st.markdown("""
         box-shadow: 0px 4px 12px rgba(0,0,0,0.08);
         margin-bottom: 20px;
     }
-    .metric-box {
-        text-align: center;
-        padding: 15px;
-        border-radius: 10px;
-        background-color: #F4F6F7;
-    }
     .footer {
         text-align: center;
         color: gray;
@@ -47,22 +41,21 @@ st.markdown("""
 
 # ---------------- SIDEBAR ----------------
 st.sidebar.title("🧠 AI Glycemic Intelligence")
-st.sidebar.write("An AI-driven system for:")
 st.sidebar.markdown("""
 - 🍛 Food recognition  
 - 📊 Glycemic Load estimation  
-- 📈 Blood glucose forecasting  
+- 📈 Post-meal glucose prediction  
 - 💡 Personalized recommendations  
 """)
 
 st.sidebar.info(
-    "📌 **Note:** This is a research prototype, not a medical device."
+    "📌 **Research prototype** – not a medical device."
 )
 
 # ---------------- HEADER ----------------
-st.markdown('<div class="main-title">🍽️ AI Glycemic Load & Glucose Prediction</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-title">🍽️ AI Glycemic Load & Post-Meal Glucose Prediction</div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="sub-title">Upload a meal image to estimate glycemic load and predict post-meal blood glucose trends</div>',
+    '<div class="sub-title">Upload a meal image and enter recent glucose values to predict post-meal glucose trends</div>',
     unsafe_allow_html=True
 )
 
@@ -75,34 +68,52 @@ left_col, right_col = st.columns([1, 1])
 with left_col:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("📷 Upload Meal Image")
+
     uploaded_image = st.file_uploader(
         "Choose an image of your meal",
         type=["jpg", "jpeg", "png"]
     )
+
     if uploaded_image:
         image = Image.open(uploaded_image)
-        st.image(image, width = 150)
+        st.image(image, width=180)
+
     st.markdown('</div>', unsafe_allow_html=True)
 
-# ---------------- RIGHT: ANALYSIS BUTTON ----------------
+# ---------------- RIGHT: USER INPUTS ----------------
 with right_col:
     st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.subheader("🔍 Analyze Meal")
-    st.write(
-        "The system will detect food items, calculate glycemic load, "
-        "forecast blood glucose, and provide recommendations."
+    st.subheader("🩸 Enter Recent Glucose Values")
+
+    g1 = st.number_input(
+        "Previous glucose value (mg/dL)",
+        min_value=60,
+        max_value=300,
+        value=100
     )
+
+    g2 = st.number_input(
+        "Previous glucose value (mg/dL)",
+        min_value=60,
+        max_value=300,
+        value=105
+    )
+
+    g3 = st.number_input(
+        "Previous glucose value (mg/dL)",
+        min_value=60,
+        max_value=300,
+        value=110
+    )
+
     analyze = st.button("🚀 Start Analysis", use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# ---------------- MOCK RESPONSE (replace with backend later) ----------------
+# ---------------- ANALYSIS ----------------
 if uploaded_image and analyze:
 
     with st.spinner("Analyzing meal using backend AI service..."):
 
-        # --------------------------------
-        # Send image to backend API
-        # --------------------------------
         backend_url = "http://127.0.0.1:8000/analyze-meal"
 
         files = {
@@ -113,20 +124,29 @@ if uploaded_image and analyze:
             )
         }
 
+        params = {
+            "g1": g1,
+            "g2": g2,
+            "g3": g3
+        }
+
         try:
-            response = requests.post(backend_url, files=files)
+            response = requests.post(
+                backend_url,
+                files=files,
+                params=params
+            )
             response.raise_for_status()
             result = response.json()
 
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.RequestException:
             st.error("❌ Backend connection failed")
             st.stop()
 
-    # -----------------------------
-    # DETECTED FOODS
-    # -----------------------------
+    # ---------------- RESULTS ----------------
     st.markdown("## 📋 Analysis Results")
 
+    # Detected Foods
     st.markdown("### 🍛 Detected Food Items")
     for food in result["foods"]:
         st.write(
@@ -134,43 +154,36 @@ if uploaded_image and analyze:
             f"({int(food['confidence'] * 100)}% confidence)"
         )
 
-    # -----------------------------
-    # GL METRIC
-    # -----------------------------
+    # Metrics
     col1, col2 = st.columns(2)
 
     with col1:
-        st.metric("Glycemic Load (GL)", result["glycemic_load"])
+        st.metric("Total Glycemic Load", result["glycemic_load"])
 
     with col2:
         st.metric(
             "Predicted Peak Glucose",
-            f"{result['predicted_glucose']} mg/dL"
+            f"{result['predicted_peak_glucose']} mg/dL"
         )
 
-    # -----------------------------
-    # GLUCOSE GRAPH
-    # -----------------------------
-    st.markdown("### 📈 Predicted Blood Glucose Trend")
+    # ---------------- GLUCOSE CURVE ----------------
+    st.markdown("### 📈 Predicted Post-Meal Glucose Curve")
 
-    time = np.arange(0, 180, 15)
-    glucose = 100 + np.sin(time / 60) * 40 + 45
+    glucose_curve = result["predicted_glucose_curve"]
+    time = np.arange(15, 15 * (len(glucose_curve) + 1), 15)
 
     fig, ax = plt.subplots()
-    ax.plot(time, glucose, linewidth=2)
+    ax.plot(time, glucose_curve, linewidth=2)
     ax.axhline(180, linestyle="--", color="red", label="High Threshold")
-    ax.set_xlabel("Time (minutes)")
+    ax.set_xlabel("Time after meal (minutes)")
     ax.set_ylabel("Glucose (mg/dL)")
     ax.legend()
 
     st.pyplot(fig)
 
-    # -----------------------------
-    # RECOMMENDATION
-    # -----------------------------
+    # ---------------- RECOMMENDATION ----------------
     st.markdown("### 💡 Personalized Recommendation")
     st.success(result["recommendation"])
-
 
 # ---------------- FOOTER ----------------
 st.markdown(
