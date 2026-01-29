@@ -162,9 +162,10 @@ if uploaded_image and analyze:
 
     with col2:
         st.metric(
-            "Predicted Peak Glucose",
-            f"{result['predicted_peak_glucose']} mg/dL"
-        )
+        "Predicted Peak Glucose",
+        f"{result['predicted_peak_glucose']} mg/dL"
+    )
+
 
     # ---------------- GLUCOSE CURVE ----------------
     st.markdown("### 📈 Predicted Post-Meal Glucose Curve")
